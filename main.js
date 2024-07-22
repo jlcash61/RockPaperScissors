@@ -22,20 +22,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Phaser game configuration
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    scene: [LoginScene, GameScene],
-    parent: 'game-container'
-  };
-  
-  // Initialize Phaser game
-  const game = new Phaser.Game(config);
-  
-  // Login scene
-  class LoginScene extends Phaser.Scene {
+// Login scene
+class LoginScene extends Phaser.Scene {
     constructor() {
       super({ key: 'LoginScene' });
     }
@@ -48,22 +36,16 @@ const config = {
       const loginElement = this.add.dom(400, 300).createFromCache('login');
       
       document.getElementById('google-login').addEventListener('click', () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).then(result => {
-          this.scene.start('GameScene');
-        }).catch(error => {
-          console.error(error);
-        });
+        signInWithPopup(auth, googleProvider)
+          .then(result => {
+            this.scene.start('GameScene');
+          })
+          .catch(error => {
+            console.error(error);
+          });
       });
   
-      document.getElementById('apple-login').addEventListener('click', () => {
-        const provider = new firebase.auth.OAuthProvider('apple.com');
-        auth.signInWithPopup(provider).then(result => {
-          this.scene.start('GameScene');
-        }).catch(error => {
-          console.error(error);
-        });
-      });
+      // Implement Apple login as needed, similar to Google login
     }
   }
   
@@ -115,20 +97,33 @@ const config = {
       return 'You Lose';
     }
   
-    saveGameState(playerChoice, computerChoice, result) {
-      const user = firebase.auth().currentUser;
+    async saveGameState(playerChoice, computerChoice, result) {
+      const user = auth.currentUser;
       if (user) {
-        db.collection('gameStates').add({
-          uid: user.uid,
-          playerChoice,
-          computerChoice,
-          result,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
+        try {
+          await addDoc(collection(db, 'gameStates'), {
+            uid: user.uid,
+            playerChoice,
+            computerChoice,
+            result,
+            timestamp: new Date()
+          });
           console.log('Game state saved successfully');
-        }).catch(error => {
+        } catch (error) {
           console.error('Error saving game state:', error);
-        });
+        }
       }
     }
   }
+  
+  // Phaser game configuration
+  const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    scene: [LoginScene, GameScene],
+    parent: 'game-container'
+  };
+  
+  // Initialize Phaser game
+  const game = new Phaser.Game(config);
