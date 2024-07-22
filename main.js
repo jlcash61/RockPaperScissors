@@ -27,7 +27,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    scene: [GameScene],
+    scene: [LoginScene, GameScene],
     parent: 'game-container'
   };
   
